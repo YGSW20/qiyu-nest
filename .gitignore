@@ -1,0 +1,93 @@
+# ═══ 栖语 Nest — 只跟踪应用代码，排除个人文件和第三方项目 ═══
+
+# ── 环境变量 ──
+.env
+.env.local
+
+# ── Node ──
+node_modules/
+npm-debug.log*
+
+# ── 应用运行时数据 ──
+/data/
+/uploads/
+/jimeng_output/
+
+# ── 第三方项目（各自独立管理） ──
+/ShopTycoon/
+/oil-equipment-os/
+/mana-reborn/
+/xianyu-lister/
+/wanjia/
+/docgen_kit/
+
+# ── 个人信息 + 求职文档 ──
+*.pdf
+*.png
+*.docx
+*.pptx
+*.jpg
+*.jpeg
+*.gif
+*.txt
+*.csv
+*.spec
+/resume*/
+/_resume*/
+/简历*/
+/*简历*
+/黄忠鑫*/
+/*黄忠鑫*
+/投递*/
+/*投递*
+/招聘*/
+/杭州游戏*/
+/活动策划*/
+/文化创意*/
+/策划作品集*/
+/我的策划*/
+/分享-*/
+/*分享-*
+/8月*/
+/30天*/
+/SLG*/
+/*SLG*
+/AI芯片*/
+/GAME_DESIGN.md
+/felix-agent.md
+/README.md
+/skills-lock.json
+/栖语Nest_项目展示.html
+/技能变现渠道总表.md
+/玩价*/
+/闲鱼*/
+/韬源*/
+/简历评估*/
+/Felix数字分身*/
+/Felix职业咨询*/
+/职业规划*/
+/求职意向书.md
+/big-game-exhibition*/
+/career-coach-card*
+/periodic-table-video/
+/novel/
+/jd_data.json
+/test_profile/
+
+# ── IDE + Config ──
+/.vscode/
+/.claude/
+/.codebuddy/
+/.agents/
+.idea/
+*.swp
+*.swo
+
+# ── Python ──
+__pycache__/
+*.pyc
+.venv/
+
+# ── OS ──
+.DS_Store
+Thumbs.db

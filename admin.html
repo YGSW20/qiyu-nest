@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>栖语 管理后台</title>
+    <style>
+        :root {
+            --primary: #5B6AF0;
+            --primary-dark: #4A56D4;
+            --bg: #F0F2F5;
+            --card: #FFFFFF;
+            --text: #1A1A2E;
+            --text-secondary: #6B7280;
+            --text-muted: #9CA3AF;
+            --border: #E5E7EB;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --radius: 10px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ========== 登录页 ========== */
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .login-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px;
+            width: 400px;
+            max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .login-card .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .login-card .subtitle { color: var(--text-muted); margin-bottom: 28px; font-size: 14px; }
+
+        .login-card input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            outline: none;
+            transition: 0.2s;
+        }
+        .login-card input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(91,106,240,0.1); }
+
+        .login-card button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: 0.2s;
+        }
+        .login-card button:hover { background: var(--primary-dark); }
+
+        .login-error { color: var(--danger); font-size: 13px; margin-top: 8px; display: none; }
+
+        /* ========== 管理布局 ========== */
+        .admin-layout { display: none; min-height: 100vh; }
+
+        /* 侧边栏 */
+        .admin-sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 240px;
+            background: #1C1E2E;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            padding: 20px;
+            font-size: 20px;
+            font-weight: 700;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sidebar-logo .dot {
+            width: 10px;
+            height: 10px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%,100% { opacity:1; } 50% { opacity:0.3; }
+        }
+
+        .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            font-size: 14px;
+            transition: 0.2s;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+        }
+        .sidebar-nav a:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .sidebar-nav a.active { color: #fff; background: rgba(91,106,240,0.2); border-left-color: var(--primary); }
+
+        .sidebar-nav .nav-icon { font-size: 16px; width: 22px; text-align: center; }
+        .sidebar-nav .badge {
+            margin-left: auto;
+            background: var(--danger);
+            font-size: 11px;
+            padding: 1px 7px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .sidebar-user {
+            padding: 16px 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sidebar-user .avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #F59E0B, #EF4444);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 600; font-size: 14px;
+        }
+        .sidebar-user .name { font-size: 14px; font-weight: 500; }
+        .sidebar-user .role { font-size: 11px; color: rgba(255,255,255,0.5); }
+        .sidebar-user .logout {
+            margin-left: auto;
+            background: none; border: none;
+            color: rgba(255,255,255,0.5);
+            cursor: pointer; font-size: 16px;
+            transition: 0.2s;
+        }
+        .sidebar-user .logout:hover { color: var(--danger); }
+
+        /* 主区域 */
+        .admin-main {
+            margin-left: 240px;
+            padding: 24px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        .page-header h1 { font-size: 22px; font-weight: 700; }
+        .page-header .time { color: var(--text-muted); font-size: 13px; }
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: 0.2s;
+        }
+        .stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+        .stat-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; flex-shrink: 0;
+        }
+        .stat-info .stat-value { font-size: 24px; font-weight: 700; }
+        .stat-info .stat-label { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+        .stat-change { font-size: 12px; margin-top: 4px; }
+        .stat-change.up { color: var(--success); }
+        .stat-change.down { color: var(--danger); }
+
+        /* 面板 */
+        .panel {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .panel-header h2 { font-size: 16px; font-weight: 600; }
+        .panel-body { padding: 20px; }
+
+        /* 按钮组 */
+        .btn {
+            padding: 7px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-outline { background: #fff; color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-danger { background: #FEE2E2; color: var(--danger); }
+        .btn-danger:hover { background: #FECACA; }
+        .btn-success { background: #D1FAE5; color: #059669; }
+        .btn-success:hover { background: #A7F3D0; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 4px; }
+        .btn-xs { padding: 2px 8px; font-size: 11px; border-radius: 3px; }
+
+        /* 表格 */
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border);
+            background: var(--bg);
+        }
+        td {
+            padding: 12px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        tr:hover td { background: #FAFBFF; }
+
+        .status-dot {
+            display: inline-block;
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .status-dot.active { background: var(--success); }
+        .status-dot.pending { background: var(--warning); }
+
+        /* 标签 */
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .tag-blue { background: #EEF0FF; color: var(--primary); }
+        .tag-green { background: #D1FAE5; color: #059669; }
+        .tag-red { background: #FEE2E2; color: var(--danger); }
+        .tag-yellow { background: #FEF3C7; color: #D97706; }
+
+        /* 搜索/筛选 */
+        .toolbar {
+            display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+        }
+        .toolbar input, .toolbar select {
+            padding: 8px 14px; border: 1px solid var(--border); border-radius: 6px;
+            font-size: 13px; outline: none; transition: 0.2s;
+        }
+        .toolbar input:focus, .toolbar select:focus { border-color: var(--primary); }
+
+        /* 图表占位 */
+        .chart-placeholder {
+            background: var(--bg);
+            border-radius: 8px;
+            height: 200px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .bar-chart {
+            display: flex; align-items: flex-end; gap: 20px; height: 160px;
+            padding: 0 10px;
+        }
+        .bar-item {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            flex: 1;
+        }
+        .bar {
+            width: 100%; max-width: 48px;
+            border-radius: 6px 6px 0 0;
+            transition: 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+        .bar:hover { filter: brightness(1.1); }
+        .bar-label { font-size: 11px; color: var(--text-muted); }
+        .bar-value { font-size: 12px; font-weight: 600; }
+
+        /* 操作确认弹窗 */
+        .confirm-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+            display: none; align-items: center; justify-content: center;
+            z-index: 200; backdrop-filter: blur(4px);
+        }
+        .confirm-overlay.show { display: flex; }
+        .confirm-box {
+            background: #fff; border-radius: 12px; padding: 28px;
+            width: 380px; max-width: 90vw; text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .confirm-box h3 { margin-bottom: 12px; font-size: 17px; }
+        .confirm-box p { color: var(--text-secondary); font-size: 14px; margin-bottom: 20px; }
+        .confirm-actions { display: flex; gap: 8px; justify-content: center; }
+
+        /* Toast */
+        .toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: #1A1A2E; color: #fff; padding: 10px 24px;
+            border-radius: 20px; font-size: 14px; z-index: 300;
+            opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .admin-sidebar { width: 60px; overflow: hidden; }
+            .admin-sidebar .sidebar-logo span:last-child,
+            .admin-sidebar .sidebar-nav a span:not(.nav-icon):not(.badge),
+            .admin-sidebar .sidebar-user .name,
+            .admin-sidebar .sidebar-user .role { display: none; }
+            .admin-sidebar .sidebar-nav a { justify-content: center; padding: 12px; }
+            .admin-main { margin-left: 60px; padding: 16px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* ===== AI Moderation ===== */
+        .ai-moderate-btn {
+            background: linear-gradient(135deg, #5B6AF0, #8B5CF6); color: #fff;
+            padding: 8px 16px; border-radius: 6px; border: none;
+            cursor: pointer; font-size: 13px; font-weight: 500; transition: 0.2s;
+            display: inline-flex; align-items: center; gap: 5px;
+        }
+        .ai-moderate-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .ai-moderate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .ai-moderate-btn .spinner {
+            display: none; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite;
+        }
+        .ai-moderate-btn.loading .spinner { display: inline-block; }
+        .ai-moderate-btn.loading .btn-text { display: none; }
+
+        .score-tag {
+            display: inline-block; padding: 1px 6px; border-radius: 3px;
+            font-size: 10px; font-weight: 600; margin-left: 4px;
+        }
+        .score-tag.safe { background: #D1FAE5; color: #059669; }
+        .score-tag.spam { background: #FEE2E2; color: #DC2626; }
+        .score-tag.harassment { background: #FEF3C7; color: #D97706; }
+
+        .ai-insight-card {
+            background: linear-gradient(135deg, #EEF0FF, #F5F3FF);
+            border: 1px solid rgba(91,106,240,0.15);
+            border-radius: 10px; padding: 16px 20px; margin-bottom: 16px;
+        }
+        .ai-insight-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+        .ai-insight-card p { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== 登录页 ==================== -->
+    <div class="login-page" id="loginPage">
+        <div class="login-card">
+            <div class="logo">栖语</div>
+            <div class="subtitle">管理后台 · Nest Admin Console</div>
+            <input type="text" id="loginUser" placeholder="用户名" value="admin">
+            <input type="password" id="loginPass" placeholder="密码" value="admin123">
+            <button onclick="doLogin()">登 录</button>
+            <div class="login-error" id="loginError">用户名或密码错误</div>
+            <div style="margin-top:16px;font-size:12px;color:var(--text-muted);">默认账号: admin / admin123</div>
+        </div>
+    </div>
+
+    <!-- ==================== 管理面板 ==================== -->
+    <div class="admin-layout" id="adminLayout">
+        <!-- 侧边栏 -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-logo">
+                <span>栖语</span><span> 后台</span>
+                <span class="dot"></span>
+            </div>
+            <nav class="sidebar-nav">
+                <a class="active" onclick="switchPage('dashboard', this)"><span class="nav-icon">📊</span> 仪表盘</a>
+                <a onclick="switchPage('posts', this)"><span class="nav-icon">📝</span> 帖子管理 <span class="badge" id="postCountBadge">10</span></a>
+                <a onclick="switchPage('users', this)"><span class="nav-icon">👥</span> 用户管理</a>
+                <a onclick="switchPage('comments', this)"><span class="nav-icon">💬</span> 评论审核 <span class="badge" id="commentPendingBadge">2</span></a>
+                <a onclick="switchPage('reports', this)"><span class="nav-icon">🚩</span> 举报管理 <span class="badge" id="reportPendingBadge">0</span></a>
+                <a onclick="switchPage('forums', this)"><span class="nav-icon">📂</span> 吧管理</a>
+                <a onclick="switchPage('analytics', this)"><span class="nav-icon">📊</span> 数据看板</a>
+                <a onclick="switchPage('settings', this)"><span class="nav-icon">⚙️</span> 系统设置</a>
+            </nav>
+            <div class="sidebar-user">
+                <div class="avatar">管</div>
+                <div>
+                    <div class="name">管理员</div>
+                    <div class="role">超级管理员</div>
+                </div>
+                <button class="logout" onclick="doLogout()" title="退出登录">⏻</button>
+            </div>
+        </aside>
+
+        <!-- 主区域 -->
+        <main class="admin-main">
+            <div class="page-header">
+                <div>
+                    <h1 id="pageTitle">📊 仪表盘</h1>
+                    <span style="font-size:13px;color:var(--text-muted);">欢迎回来，管理员</span>
+                </div>
+                <span class="time" id="currentTime"></span>
+            </div>
+
+            <div id="pageContent"></div>
+        </main>
+    </div>
+
+    <!-- ==================== 确认弹窗 ==================== -->
+    <div class="confirm-overlay" id="confirmOverlay">
+        <div class="confirm-box">
+            <h3 id="confirmTitle">确认操作</h3>
+            <p id="confirmMsg">确定要执行此操作吗？</p>
+            <div class="confirm-actions">
+                <button class="btn btn-outline" onclick="closeConfirm()">取消</button>
+                <button class="btn btn-danger" id="confirmBtn" onclick="execConfirm()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ==================== 权限验证：页面加载时检查token ====================
+        (function(){
+          var token = localStorage.getItem('closd_token');
+          if(token){
+            fetch('/api/auth/me',{headers:{'Authorization':'Bearer '+token}}).then(function(r){return r.json()}).then(function(user){
+              if(user.role==='admin'){ document.getElementById('loginPage').style.display='none'; document.getElementById('adminLayout').style.display='block'; switchPage('dashboard',document.querySelector('.sidebar-nav a')); updateTime(); setInterval(updateTime,30000); updateBadges(); }
+            }).catch(function(){});
+          }
+        })();
+
+        // ==================== 数据层 ====================
+        // 从 localStorage 加载数据，如果没有则用默认数据
+        function getStore(key, def) {
+            try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; }
+            catch(e) { return def; }
+        }
+        function setStore(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+        const defaultPosts = [
+            { id:1, title:'【公告】社区规范更新 & 新功能上线通知', author:'CLOSD小助手', forum:'tech', time:'2026-07-02', status:'published', pinned:true, views:12800, likes:356, replies:128 },
+            { id:2, title:'分享一个超好用的 VS Code 插件，提升编码效率', author:'代码诗人', forum:'tech', time:'2026-07-03', status:'published', pinned:false, views:3200, likes:203, replies:47 },
+            { id:3, title:'《黑神话：悟空》全成就达成！分享一些 BOSS 打法心得', author:'齐天大圣', forum:'game', time:'2026-07-03', status:'published', pinned:false, views:45600, likes:892, replies:215 },
+            { id:4, title:'今天做了红烧排骨，第一次就成功了！附教程', author:'厨房小白', forum:'life', time:'2026-07-02', status:'published', pinned:false, views:5400, likes:189, replies:56 },
+            { id:5, title:'用 Midjourney 生成的赛博朋克风格城市，效果惊艳', author:'AI画师', forum:'ai', time:'2026-07-03', status:'published', pinned:false, views:23100, likes:567, replies:92 },
+            { id:6, title:'【求助】React 18 的 useEffect 执行两次是什么原因？', author:'前端小菜', forum:'tech', time:'2026-07-01', status:'published', pinned:false, views:1800, likes:45, replies:23 },
+            { id:7, title:'推荐几首适合编程时听的纯音乐，效率翻倍', author:'音符旅人', forum:'music', time:'2026-07-02', status:'published', pinned:false, views:7600, likes:234, replies:78 },
+            { id:8, title:'Figma 插件推荐：这 5 个让设计效率提升 10 倍', author:'像素匠人', forum:'design', time:'2026-07-03', status:'published', pinned:false, views:4300, likes:156, replies:34 },
+            { id:9, title:'聊聊今年的应届生就业情况，技术岗回暖了吗？', author:'职场观察员', forum:'life', time:'2026-07-01', status:'published', pinned:false, views:56200, likes:678, replies:312 },
+            { id:10, title:'【教程】从零搭建一个本地大模型推理环境', author:'AI研究员', forum:'ai', time:'2026-07-03', status:'published', pinned:false, views:34500, likes:445, replies:167 },
+        ];
+
+        const defaultUsers = [
+            { id:1, username:'CLOSD小助手', role:'moderator', posts:156, joinDate:'2026-01-15', status:'active' },
+            { id:2, username:'代码诗人', role:'user', posts:42, joinDate:'2026-03-22', status:'active' },
+            { id:3, username:'齐天大圣', role:'user', posts:89, joinDate:'2026-02-10', status:'active' },
+            { id:4, username:'厨房小白', role:'user', posts:12, joinDate:'2026-06-05', status:'active' },
+            { id:5, username:'AI画师', role:'user', posts:67, joinDate:'2026-04-18', status:'active' },
+            { id:6, username:'前端小菜', role:'user', posts:3, joinDate:'2026-07-01', status:'active' },
+            { id:7, username:'音符旅人', role:'user', posts:28, joinDate:'2026-05-08', status:'active' },
+            { id:8, username:'像素匠人', role:'user', posts:31, joinDate:'2026-03-30', status:'active' },
+            { id:9, username:'职场观察员', role:'user', posts:54, joinDate:'2026-01-28', status:'active' },
+            { id:10, username:'AI研究员', role:'user', posts:73, joinDate:'2026-02-14', status:'active' },
+        ];
+
+        const defaultForums = [
+            { id:'tech', name:'技术交流', icon:'💻', posts:12340, members:45600, desc:'程序员的家，分享技术心得与问题求助' },
+            { id:'game', name:'游戏天地', icon:'🎮', posts:8920, members:32000, desc:'游戏攻略、评测、开黑组队' },
+            { id:'life', name:'生活日常', icon:'🌸', posts:15670, members:58000, desc:'分享生活中的美好瞬间' },
+            { id:'design', name:'设计创意', icon:'🎨', posts:5430, members:18900, desc:'设计师交流平台，灵感碰撞' },
+            { id:'music', name:'音乐分享', icon:'🎵', posts:7890, members:25000, desc:'分享你喜欢的音乐，一起聆听' },
+            { id:'ai', name:'AI 探索', icon:'🤖', posts:11000, members:41200, desc:'探索人工智能的无限可能' },
+        ];
+
+        const defaultComments = [
+            { id:1, postId:3, author:'游戏达人', text:'卡在亢金龙三天了...谢谢楼主分享！', time:'2026-07-03 10:20', status:'approved' },
+            { id:2, postId:6, author:'React老手', text:'这是 React 18 的 StrictMode 特性，故意 unmount 再 remount 来帮你发现副作用清理问题。', time:'2026-07-03 09:15', status:'approved' },
+            { id:3, postId:9, author:'匿名用户', text:'广告贴，加我微信 xxx 买课', time:'2026-07-03 11:30', status:'pending' },
+            { id:4, postId:5, author:'AI爱好者', text:'Prompt收下了，效果确实炸裂！', time:'2026-07-03 10:45', status:'approved' },
+            { id:5, postId:2, author:'水军账号', text:'看看我的签名档 👉 xxx.com', time:'2026-07-03 12:00', status:'pending' },
+            { id:6, postId:10, author:'硬件控', text:'显存不够8G有办法吗？只有6G的3060', time:'2026-07-02 22:10', status:'approved' },
+        ];
+
+        let posts = getStore('closd_admin_posts', defaultPosts);
+        let users = getStore('closd_admin_users', defaultUsers);
+        let forums = getStore('closd_admin_forums', defaultForums);
+        let comments = getStore('closd_admin_comments', defaultComments);
+
+        function saveAll() {
+            setStore('closd_admin_posts', posts);
+            setStore('closd_admin_users', users);
+            setStore('closd_admin_forums', forums);
+            setStore('closd_admin_comments', comments);
+        }
+
+        // ==================== 登录逻辑 (JWT + role check) ====================
+        async function doLogin() {
+            var u = document.getElementById('loginUser').value.trim();
+            var p = document.getElementById('loginPass').value.trim();
+            var errEl = document.getElementById('loginError');
+            try {
+                var resp = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p }),
+                });
+                var data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || '登录失败');
+                if (data.user.role !== 'admin') throw new Error('仅管理员可访问后台');
+                localStorage.setItem('closd_token', data.token);
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('adminLayout').style.display = 'block';
+                switchPage('dashboard', document.querySelector('.sidebar-nav a'));
+                updateTime();
+                setInterval(updateTime, 30000);
+                updateBadges();
+            } catch (e) {
+                errEl.textContent = e.message;
+                errEl.style.display = 'block';
+            }
+        }
+
+        function doLogout() {
+            document.getElementById('loginPage').style.display = 'flex';
+            document.getElementById('adminLayout').style.display = 'none';
+            document.getElementById('loginPass').value = '';
+        }
+
+        document.getElementById('loginPass').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') doLogin();
+        });
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent =
+                now.toLocaleDateString('zh-CN') + ' ' + now.toLocaleTimeString('zh-CN');
+        }
+
+        let currentPage = 'dashboard';
+
+        // ==================== 页面切换 ====================
+        function switchPage(page, el) {
+            currentPage = page;
+            document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+            if (el) el.classList.add('active');
+
+            const titles = {
+                dashboard: '📊 仪表盘', posts: '📝 帖子管理', users: '👥 用户管理',
+                comments: '💬 评论审核', forums: '📂 吧管理', settings: '⚙️ 系统设置',
+            };
+            document.getElementById('pageTitle').textContent = titles[page] || page;
+
+            const content = document.getElementById('pageContent');
+            switch (page) {
+                case 'dashboard': content.innerHTML = renderDashboard(); break;
+                case 'posts': content.innerHTML = renderPosts(); break;
+                case 'users': content.innerHTML = renderUsers(); break;
+                case 'comments': content.innerHTML = renderComments(); break;
+                case 'reports': content.innerHTML = renderReports(); break;
+                case 'analytics': content.innerHTML = renderAnalytics(); break;
+                case 'forums': content.innerHTML = renderForums(); break;
+                case 'settings': content.innerHTML = renderSettings(); break;
+            }
+
+            // 绑定事件
+            if (page === 'posts') bindPostEvents();
+            if (page === 'users') bindUserEvents();
+            if (page === 'comments') bindCommentEvents();
+            if (page === 'reports') bindReportEvents();
+            if (page === 'analytics') bindAnalyticsEvents();
+            if (page === 'forums') bindForumEvents();
+            if (page === 'dashboard') bindDashboardEvents();
+            if (page === 'settings') bindSettingsEvents();
+
+            updateBadges();
+        }
+
+        function updateBadges() {
+            document.getElementById('postCountBadge').textContent = posts.length;
+            const pending = comments.filter(c => c.status === 'pending').length;
+            document.getElementById('commentPendingBadge').textContent = pending;
+            if (pending === 0) document.getElementById('commentPendingBadge').style.display = 'none';
+            else document.getElementById('commentPendingBadge').style.display = 'inline';
+        }
+
+        // ==================== 仪表盘 ====================
+        function renderDashboard() {
+            const totalPosts = posts.length;
+            const totalUsers = users.length;
+            const totalForums = forums.length;
+            const totalViews = posts.reduce((s,p) => s + p.views, 0);
+            const pendingComments = comments.filter(c => c.status === 'pending').length;
+            const todayPosts = posts.filter(p => p.time === '2026-07-03').length;
+
+            // 帖子按吧分布
+            const forumDist = {};
+            posts.forEach(p => { forumDist[p.forum] = (forumDist[p.forum] || 0) + 1; });
+
+            // 最近帖子
+            const recentPosts = [...posts].sort((a,b) => b.id - a.id).slice(0, 5);
+
+            return `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#EEF0FF;">📝</div>
+                        <div class="stat-info">
+                            <div class="stat-value">${totalPosts}</div>
+                            <div class="stat-label">总帖子数</div>
+                            <div class="stat-change up">↑ ${todayPosts} 今日新增</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#D1FAE5;">👥</div>
+                        <div class="stat-info">
+                            <div class="stat-value">${totalUsers}</div>
+                            <div class="stat-label">注册用户</div>
+                            <div class="stat-change up">↑ 3 今日新增</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#FEF3C7;">👁</div>
+                        <div class="stat-info">
+                            <div class="stat-value">${(totalViews/1000).toFixed(1)}k</div>
+                            <div class="stat-label">总浏览量</div>
+                            <div class="stat-change up">↑ 12.5% 较昨日</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:#FEE2E2;">⚠️</div>
+                        <div class="stat-info">
+                            <div class="stat-value">${pendingComments}</div>
+                            <div class="stat-label">待审核评论</div>
+                            <div class="stat-change ${pendingComments > 0 ? 'down' : 'up'}">需处理</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
+                    <div class="panel">
+                        <div class="panel-header"><h2>📊 帖子按吧分布</h2></div>
+                        <div class="panel-body">
+                            <div class="bar-chart">
+                                ${Object.entries(forumDist).map(([f, count]) => {
+                                    const forum = forums.find(ff => ff.id === f);
+                                    const name = forum ? forum.name : f;
+                                    const icon = forum ? forum.icon : '';
+                                    const pct = Math.round(count / totalPosts * 100);
+                                    return `
+                                        <div class="bar-item">
+                                            <div class="bar-value">${count}</div>
+                                            <div class="bar" style="height:${Math.max(count*12, 20)}px; background: linear-gradient(180deg, #5B6AF0, #8B5CF6);" title="${name}: ${count}"></div>
+                                            <div class="bar-label">${icon} ${name}</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-header"><h2>🕐 最新帖子</h2></div>
+                        <div class="panel-body" style="padding:0;">
+                            <table>
+                                ${recentPosts.map(p => `
+                                    <tr>
+                                        <td style="font-size:13px;">${p.title.substring(0,18)}${p.title.length>18?'...':''}</td>
+                                        <td style="font-size:12px;color:var(--text-muted);">${p.author}</td>
+                                        <td><span class="tag tag-blue">${forums.find(f=>f.id===p.forum)?.name||p.forum}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==================== 帖子管理 ====================
+        function renderPosts(filter = '') {
+            let filtered = posts;
+            if (filter) {
+                filtered = posts.filter(p =>
+                    p.title.includes(filter) || p.author.includes(filter) ||
+                    (forums.find(f=>f.id===p.forum)?.name||'').includes(filter)
+                );
+            }
+            return `
+                <div class="toolbar">
+                    <input type="text" id="postSearch" placeholder="搜索帖子标题、作者..." oninput="filterPosts()">
+                    <select id="postForumFilter" onchange="filterPosts()">
+                        <option value="">全部吧</option>
+                        ${forums.map(f => `<option value="${f.id}">${f.icon} ${f.name}</option>`).join('')}
+                    </select>
+                    <button class="btn btn-outline btn-sm" onclick="resetPostFilter()">🔄 重置</button>
+                    <button class="btn btn-primary btn-sm" onclick="addPost()">+ 新建帖子</button>
+                </div>
+                <div class="panel" style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:40px;">ID</th>
+                                <th>标题</th>
+                                <th>作者</th>
+                                <th>吧</th>
+                                <th>状态</th>
+                                <th>浏览</th>
+                                <th>赞</th>
+                                <th>回复</th>
+                                <th style="width:180px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="postTableBody">
+                            ${filtered.map(p => `
+                                <tr>
+                                    <td>${p.id}</td>
+                                    <td>
+                                        ${p.pinned ? '<span class="tag tag-yellow">📌 置顶</span> ' : ''}
+                                        ${p.title.substring(0, 30)}${p.title.length>30?'...':''}
+                                    </td>
+                                    <td>${p.author}</td>
+                                    <td><span class="tag tag-blue">${forums.find(f=>f.id===p.forum)?.name||p.forum}</span></td>
+                                    <td><span class="tag ${p.status==='published'?'tag-green':'tag-yellow'}">${p.status==='published'?'已发布':'草稿'}</span></td>
+                                    <td>${(p.views/1000).toFixed(1)}k</td>
+                                    <td>${p.likes}</td>
+                                    <td>${p.replies}</td>
+                                    <td>
+                                        <button class="btn btn-success btn-xs" onclick="togglePin(${p.id})">${p.pinned?'📌取消':'📌置顶'}</button>
+                                        <button class="btn btn-outline btn-xs" onclick="editPost(${p.id})">✏️</button>
+                                        <button class="btn btn-danger btn-xs" onclick="confirmDeletePost(${p.id})">🗑</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    ${filtered.length === 0 ? '<div style="text-align:center;padding:40px;color:var(--text-muted);">没有找到匹配的帖子</div>' : ''}
+                </div>
+            `;
+        }
+
+        function bindPostEvents() {
+            document.getElementById('postSearch')?.addEventListener('input', filterPosts);
+        }
+        function filterPosts() {
+            const search = document.getElementById('postSearch')?.value || '';
+            const forum = document.getElementById('postForumFilter')?.value || '';
+            let filtered = posts;
+            if (search) filtered = filtered.filter(p => p.title.includes(search) || p.author.includes(search));
+            if (forum) filtered = filtered.filter(p => p.forum === forum);
+            document.getElementById('pageContent').innerHTML = renderPosts();
+            document.getElementById('postSearch').value = search;
+            document.getElementById('postForumFilter').value = forum;
+            bindPostEvents();
+        }
+        function resetPostFilter() {
+            document.getElementById('postSearch').value = '';
+            document.getElementById('postForumFilter').value = '';
+            document.getElementById('pageContent').innerHTML = renderPosts();
+            bindPostEvents();
+        }
+
+        function togglePin(id) {
+            const post = posts.find(p => p.id === id);
+            if (post) { post.pinned = !post.pinned; saveAll(); switchPage('posts', document.querySelector('.sidebar-nav a:nth-child(2)')); showToast(post.pinned ? '已置顶' : '已取消置顶'); }
+        }
+        function editPost(id) {
+            const post = posts.find(p => p.id === id);
+            if (!post) return;
+            const title = prompt('编辑标题：', post.title);
+            if (title) { post.title = title; saveAll(); switchPage('posts', document.querySelector('.sidebar-nav a:nth-child(2)')); showToast('帖子已更新'); }
+        }
+        function addPost() {
+            const title = prompt('新帖子标题：');
+            if (!title) return;
+            const forum = prompt('选择吧（tech/game/life/design/music/ai）：', 'tech');
+            const newId = Math.max(...posts.map(p=>p.id), 0) + 1;
+            posts.unshift({
+                id: newId, title, author:'管理员', forum: forum || 'tech',
+                time: new Date().toISOString().split('T')[0], status:'published',
+                pinned:false, views:0, likes:0, replies:0,
+            });
+            saveAll(); switchPage('posts', document.querySelector('.sidebar-nav a:nth-child(2)')); showToast('新帖子已创建');
+        }
+
+        let deletePostId = null;
+        function confirmDeletePost(id) {
+            deletePostId = id;
+            document.getElementById('confirmTitle').textContent = '删除帖子';
+            document.getElementById('confirmMsg').textContent = '确定删除此帖子吗？此操作不可撤销。';
+            document.getElementById('confirmOverlay').classList.add('show');
+        }
+
+        // ==================== 用户管理 ====================
+        function renderUsers(filter = '') {
+            let filtered = users;
+            if (filter) filtered = users.filter(u => u.username.includes(filter) || u.role.includes(filter));
+            return `
+                <div class="toolbar">
+                    <input type="text" id="userSearch" placeholder="搜索用户名..." oninput="filterUsers()">
+                    <select id="userRoleFilter" onchange="filterUsers()">
+                        <option value="">全部角色</option>
+                        <option value="admin">管理员</option>
+                        <option value="moderator">版主</option>
+                        <option value="user">普通用户</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" onclick="addUser()">+ 添加用户</button>
+                </div>
+                <div class="panel" style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr><th>ID</th><th>用户名</th><th>角色</th><th>帖子数</th><th>注册日期</th><th>状态</th><th style="width:150px;">操作</th></tr>
+                        </thead>
+                        <tbody>
+                            ${filtered.map(u => `
+                                <tr>
+                                    <td>${u.id}</td>
+                                    <td>${u.username}</td>
+                                    <td><span class="tag ${u.role==='admin'?'tag-red':u.role==='moderator'?'tag-blue':'tag-green'}">${u.role}</span></td>
+                                    <td>${u.posts}</td>
+                                    <td>${u.joinDate}</td>
+                                    <td><span class="status-dot ${u.status}"></span>${u.status==='active'?'正常':'禁用'}</td>
+                                    <td>
+                                        <button class="btn btn-outline btn-xs" onclick="editUser(${u.id})">✏️</button>
+                                        <button class="btn ${u.status==='active'?'btn-danger':'btn-success'} btn-xs" onclick="toggleUser(${u.id})">${u.status==='active'?'🚫禁用':'✅启用'}</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        function bindUserEvents() {
+            document.getElementById('userSearch')?.addEventListener('input', filterUsers);
+        }
+        function filterUsers() {
+            const search = document.getElementById('userSearch')?.value || '';
+            const role = document.getElementById('userRoleFilter')?.value || '';
+            let filtered = users;
+            if (search) filtered = filtered.filter(u => u.username.includes(search));
+            if (role) filtered = filtered.filter(u => u.role === role);
+            document.getElementById('pageContent').innerHTML = renderUsers();
+            document.getElementById('userSearch').value = search;
+            document.getElementById('userRoleFilter').value = role;
+            bindUserEvents();
+        }
+        function toggleUser(id) {
+            const user = users.find(u => u.id === id);
+            if (user) { user.status = user.status === 'active' ? 'banned' : 'active'; saveAll(); switchPage('users', document.querySelector('.sidebar-nav a:nth-child(3)')); showToast(user.status === 'active' ? '用户已启用' : '用户已禁用'); }
+        }
+        function editUser(id) {
+            const user = users.find(u => u.id === id);
+            if (!user) return;
+            const name = prompt('用户名：', user.username);
+            if (name) { user.username = name; saveAll(); switchPage('users', document.querySelector('.sidebar-nav a:nth-child(3)')); showToast('用户已更新'); }
+        }
+        function addUser() {
+            const name = prompt('新用户名：');
+            if (!name) return;
+            const newId = Math.max(...users.map(u=>u.id), 0) + 1;
+            users.push({ id:newId, username:name, role:'user', posts:0, joinDate:new Date().toISOString().split('T')[0], status:'active' });
+            saveAll(); switchPage('users', document.querySelector('.sidebar-nav a:nth-child(3)')); showToast('用户已添加');
+        }
+
+        // ==================== 评论审核 ====================
+        function renderComments() {
+            const pendingCount = comments.filter(c => c.status === 'pending').length;
+            return `
+                <div class="toolbar">
+                    <select id="commentStatusFilter" onchange="filterComments()">
+                        <option value="">全部状态</option>
+                        <option value="approved">✅ 已通过</option>
+                        <option value="pending" selected>⏳ 待审核</option>
+                        <option value="rejected">❌ 已拒绝</option>
+                    </select>
+                    <button class="ai-moderate-btn" id="aiModerateBtn" onclick="aiModerateComments()" ${pendingCount === 0 ? 'disabled' : ''}>
+                        <span class="spinner"></span><span class="btn-text">✨ AI 自动审核 (${pendingCount}条待审)</span>
+                    </button>
+                </div>
+                <div class="panel">
+                    <table>
+                        <thead>
+                            <tr><th>ID</th><th>所属帖子</th><th>作者</th><th>内容</th><th>时间</th><th>状态</th><th style="width:200px;">操作</th></tr>
+                        </thead>
+                        <tbody>
+                            ${comments.map(c => {
+                                const post = posts.find(p => p.id === c.postId);
+                                return `
+                                    <tr style="${c.status==='pending'?'background:#FFFBEB;':''}">
+                                        <td>${c.id}</td>
+                                        <td style="font-size:12px;">${post ? post.title.substring(0,15)+'...' : '未知'}</td>
+                                        <td>${c.author}</td>
+                                        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.text}</td>
+                                        <td>${c.time}</td>
+                                        <td><span class="tag ${c.status==='approved'?'tag-green':c.status==='pending'?'tag-yellow':'tag-red'}">${c.status==='approved'?'通过':c.status==='pending'?'待审':'拒绝'}</span></td>
+                                        <td>
+                                            ${c.status === 'pending' ? `
+                                                <button class="btn btn-success btn-xs" onclick="approveComment(${c.id})">✅ 通过</button>
+                                                <button class="btn btn-danger btn-xs" onclick="rejectComment(${c.id})">❌ 拒绝</button>
+                                            ` : `
+                                                <button class="btn btn-outline btn-xs" onclick="toggleCommentStatus(${c.id})">🔄 改状态</button>
+                                            `}
+                                            <button class="btn btn-danger btn-xs" onclick="confirmDeleteComment(${c.id})">🗑</button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        function bindCommentEvents() {
+            const sel = document.getElementById('commentStatusFilter');
+            if (sel) sel.value = 'pending';
+        }
+        function filterComments() {
+            const status = document.getElementById('commentStatusFilter')?.value || '';
+            let filtered = comments;
+            if (status) filtered = comments.filter(c => c.status === status);
+            // 重建显示
+            const tbody = document.querySelector('#pageContent tbody');
+            if (tbody) {
+                tbody.innerHTML = filtered.map(c => {
+                    const post = posts.find(p => p.id === c.postId);
+                    return `<tr style="${c.status==='pending'?'background:#FFFBEB;':''}">
+                        <td>${c.id}</td>
+                        <td>${post ? post.title.substring(0,15)+'...' : '未知'}</td>
+                        <td>${c.author}</td><td>${c.text}</td><td>${c.time}</td>
+                        <td><span class="tag ${c.status==='approved'?'tag-green':c.status==='pending'?'tag-yellow':'tag-red'}">${c.status==='approved'?'通过':c.status==='pending'?'待审':'拒绝'}</span></td>
+                        <td>
+                            ${c.status==='pending'?`<button class="btn btn-success btn-xs" onclick="approveComment(${c.id})">✅ 通过</button><button class="btn btn-danger btn-xs" onclick="rejectComment(${c.id})">❌ 拒绝</button>`:`<button class="btn btn-outline btn-xs" onclick="toggleCommentStatus(${c.id})">🔄 改状态</button>`}
+                            <button class="btn btn-danger btn-xs" onclick="confirmDeleteComment(${c.id})">🗑</button>
+                        </td></tr>`;
+                }).join('');
+            }
+        }
+        function approveComment(id) {
+            const c = comments.find(c => c.id === id);
+            if (c) { c.status = 'approved'; saveAll(); switchPage('comments', document.querySelector('.sidebar-nav a:nth-child(4)')); showToast('评论已通过'); }
+        }
+        function rejectComment(id) {
+            const c = comments.find(c => c.id === id);
+            if (c) { c.status = 'rejected'; saveAll(); switchPage('comments', document.querySelector('.sidebar-nav a:nth-child(4)')); showToast('评论已拒绝'); }
+        }
+        function toggleCommentStatus(id) {
+            const c = comments.find(c => c.id === id);
+            if (c) {
+                const states = ['approved', 'pending', 'rejected'];
+                const idx = states.indexOf(c.status);
+                c.status = states[(idx + 1) % 3];
+                saveAll(); switchPage('comments', document.querySelector('.sidebar-nav a:nth-child(4)'));
+                showToast('状态已更改: ' + c.status);
+            }
+        }
+        let deleteCommentId = null;
+        function confirmDeleteComment(id) {
+            deleteCommentId = id;
+            document.getElementById('confirmTitle').textContent = '删除评论';
+            document.getElementById('confirmMsg').textContent = '确定删除此评论吗？';
+            document.getElementById('confirmOverlay').classList.add('show');
+        }
+
+        // ==================== 吧管理 ====================
+        function renderForums() {
+            return '<div class="toolbar"><button class="btn btn-primary btn-sm" onclick="addForum()">+ 新建板块</button></div><div class="panel"><table><thead><tr><th>图标</th><th>名称</th><th>ID</th><th>类型</th><th>简介</th><th>操作</th></tr></thead><tbody id="forumsTableBody"><tr><td colspan="6" style="text-align:center;padding:40px;">加载中...</td></tr></tbody></table></div>';
+        }
+        function bindForumEvents(){ loadForumsData() }
+        async function loadForumsData(){
+            var token = localStorage.getItem('closd_token');
+            if(!token) return;
+            try{
+                var resp = await fetch('/api/forums',{headers:{'Authorization':'Bearer '+token}});
+                var data = await resp.json();
+                var all = (data.default||[]).map(function(f){f.type='默认';return f}).concat((data.custom||[]).map(function(f){f.type='自定义';return f}));
+                var tbody = document.getElementById('forumsTableBody');
+                if(!tbody) return;
+                tbody.innerHTML = all.map(function(f){
+                    return '<tr><td style="font-size:24px;">'+(f.icon||'')+'</td><td style="font-weight:600;">'+f.name+'</td><td><code>'+f.id+'</code></td><td><span class="tag '+(f.type==='默认'?'tag-blue':'tag-green')+'">'+f.type+'</span></td><td style="font-size:12px;color:var(--text-muted);">'+(f.desc||'')+'</td><td>'+(f.type==='自定义'?'<button class="btn btn-outline btn-xs" onclick="editForum(\''+f.id+'\')">✏️</button> <button class="btn btn-danger btn-xs" onclick="confirmDeleteForum(\''+f.id+'\')">🗑</button>':'<span style="font-size:10px;color:var(--text-tertiary);">系统</span>')+'</td></tr>';
+                }).join('');
+            }catch(e){}
+        }
+        async function addForum() {
+            var name = prompt('板块名称：');
+            if (!name) return;
+            var id = prompt('ID（英文）：', name.toLowerCase().replace(/\s/g,'-'));
+            if (!id) return;
+            var icon = prompt('图标（emoji）：', '📌');
+            var desc = prompt('简介：', '');
+            var token = localStorage.getItem('closd_token');
+            try{
+                await fetch('/api/forums',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({id:id,name:name,icon:icon,desc:desc})});
+                switchPage('forums', document.querySelector('.sidebar-nav a:nth-child(5)')); showToast('板块已创建');
+            }catch(e){ showToast('创建失败') }
+        }
+        async function editForum(id) {
+            var name = prompt('名称：');
+            if (!name) return;
+            var icon = prompt('图标（emoji）：');
+            var desc = prompt('简介：');
+            var token = localStorage.getItem('closd_token');
+            try{
+                var body = {}; if(name) body.name=name; if(icon) body.icon=icon; if(desc!==null) body.desc=desc;
+                await fetch('/api/forums/'+id,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)});
+                switchPage('forums', document.querySelector('.sidebar-nav a:nth-child(5)')); showToast('板块已更新');
+            }catch(e){ showToast('编辑失败') }
+        }
+        let deleteForumId = null;
+        function confirmDeleteForum(id) {
+            deleteForumId = id;
+            document.getElementById('confirmTitle').textContent = '删除板块';
+            document.getElementById('confirmMsg').textContent = '确定删除此板块吗？';
+            document.getElementById('confirmOverlay').classList.add('show');
+        }
+
+        // ==================== 系统设置 ====================
+        function renderSettings() {
+            const stats = {
+                posts: posts.length, users: users.length, forums: forums.length,
+                comments: comments.length, pendingComments: comments.filter(c => c.status === 'pending').length,
+            };
+            return `
+                <div class="panel">
+                    <div class="panel-header"><h2>🔧 基本设置</h2></div>
+                    <div class="panel-body">
+                        <div style="display:grid; gap:16px; max-width:500px;">
+                            <div>
+                                <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">站点名称</label>
+                                <input type="text" id="siteName" value="CLOSD 社区" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+                            </div>
+                            <div>
+                                <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">站点描述</label>
+                                <input type="text" id="siteDesc" value="发现你的兴趣" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+                            </div>
+                            <div>
+                                <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">审核模式</label>
+                                <select id="reviewMode" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+                                    <option value="all" selected>所有内容需审核</option>
+                                    <option value="new">仅新用户需审核</option>
+                                    <option value="none">无需审核</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="saveSettings()">💾 保存设置</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header"><h2>🗄 数据管理</h2></div>
+                    <div class="panel-body">
+                        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+                            当前数据统计：${stats.posts} 帖子 · ${stats.users} 用户 · ${stats.forums} 吧 · ${stats.comments} 评论（${stats.pendingComments} 待审）
+                        </p>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="btn btn-outline" onclick="exportData()">📥 导出数据</button>
+                            <button class="btn btn-outline" onclick="importDataPrompt()">📤 导入数据</button>
+                            <button class="btn btn-danger" onclick="confirmResetData()">⚠️ 重置所有数据</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        function bindSettingsEvents() {}
+        function saveSettings() {
+            const name = document.getElementById('siteName')?.value || 'CLOSD 社区';
+            const desc = document.getElementById('siteDesc')?.value || '';
+            const mode = document.getElementById('reviewMode')?.value || 'all';
+            setStore('closd_site_name', name);
+            setStore('closd_site_desc', desc);
+            setStore('closd_review_mode', mode);
+            showToast('✅ 设置已保存');
+        }
+        function exportData() {
+            const data = { posts, users, forums, comments };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'closd_backup_' + new Date().toISOString().split('T')[0] + '.json';
+            a.click(); URL.revokeObjectURL(url);
+            showToast('📥 数据已导出');
+        }
+        function importDataPrompt() {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    try {
+                        const data = JSON.parse(ev.target.result);
+                        if (data.posts) posts = data.posts;
+                        if (data.users) users = data.users;
+                        if (data.forums) forums = data.forums;
+                        if (data.comments) comments = data.comments;
+                        saveAll();
+                        switchPage(currentPage, document.querySelector('.sidebar-nav a.active'));
+                        showToast('📤 数据已导入');
+                    } catch(err) { showToast('❌ 导入失败：数据格式错误'); }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+        function confirmResetData() {
+            document.getElementById('confirmTitle').textContent = '⚠️ 重置数据';
+            document.getElementById('confirmMsg').textContent = '确定要重置所有数据吗？此操作不可撤销，建议先导出备份。';
+            document.getElementById('confirmOverlay').classList.add('show');
+            window._confirmAction = 'reset';
+        }
+
+        // ==================== 全局确认逻辑 ====================
+        function closeConfirm() {
+            document.getElementById('confirmOverlay').classList.remove('show');
+            deletePostId = null; deleteCommentId = null; deleteForumId = null;
+            window._confirmAction = null;
+        }
+        function execConfirm() {
+            if (deletePostId) {
+                posts = posts.filter(p => p.id !== deletePostId);
+                saveAll(); switchPage('posts', document.querySelector('.sidebar-nav a:nth-child(2)'));
+                showToast('帖子已删除');
+                deletePostId = null;
+            } else if (deleteCommentId) {
+                comments = comments.filter(c => c.id !== deleteCommentId);
+                saveAll(); switchPage('comments', document.querySelector('.sidebar-nav a:nth-child(4)'));
+                showToast('评论已删除');
+                deleteCommentId = null;
+            } else if (deleteForumId) {
+                var token = localStorage.getItem('closd_token');
+                fetch('/api/forums/'+deleteForumId,{method:'DELETE',headers:{'Authorization':'Bearer '+token}}).then(function(){
+                    switchPage('forums', document.querySelector('.sidebar-nav a:nth-child(5)'));
+                    showToast('板块已删除');
+                }).catch(function(){ showToast('删除失败') });
+                deleteForumId = null;
+            } else if (window._confirmAction === 'reset') {
+                posts = [...defaultPosts]; users = [...defaultUsers];
+                forums = [...defaultForums]; comments = [...defaultComments];
+                saveAll(); switchPage(currentPage, document.querySelector('.sidebar-nav a.active'));
+                showToast('数据已重置为默认值');
+                window._confirmAction = null;
+            }
+            closeConfirm();
+        }
+
+        // ==================== Toast ====================
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg; toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // ==================== AI 审核 ====================
+        const AI_API_BASE = window.location.origin + '/api/ai';
+
+        async function aiModerateComments() {
+            const pending = comments.filter(c => c.status === 'pending');
+            if (pending.length === 0) { showToast('没有待审核的评论'); return; }
+
+            const btn = document.getElementById('aiModerateBtn');
+            btn.classList.add('loading');
+            btn.querySelector('.btn-text').textContent = 'AI 审核中...';
+
+            try {
+                const items = pending.map(c => ({ id: c.id, text: c.text }));
+                const resp = await fetch(AI_API_BASE + '/moderate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items }),
+                    signal: AbortSignal.timeout(30000),
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || '审核失败');
+
+                // Apply AI decisions
+                let approvedCount = 0, rejectedCount = 0;
+                (data.results || []).forEach(r => {
+                    const comment = comments.find(c => c.id === r.id);
+                    if (!comment) return;
+                    if (r.verdict === 'safe') {
+                        comment.status = 'approved';
+                        comment.aiReason = r.reason;
+                        approvedCount++;
+                    } else {
+                        comment.status = 'rejected';
+                        comment.aiReason = r.reason;
+                        rejectedCount++;
+                    }
+                });
+
+                // For any pending comments AI didn't process, keep as pending
+                saveAll();
+                switchPage('comments', document.querySelector('.sidebar-nav a:nth-child(4)'));
+                showToast(`AI 审核完成：✅ 通过 ${approvedCount} 条，❌ 拒绝 ${rejectedCount} 条`);
+            } catch (err) {
+                showToast('AI 审核失败: ' + err.message);
+                btn.classList.remove('loading');
+                btn.querySelector('.btn-text').textContent = '✨ AI 自动审核 (' + pending.length + '条待审)';
+            }
+        }
+
+        // Add score tag display in comment rendering
+        const origRenderComments = renderComments;
+        renderComments = function() {
+            const pendingCount = comments.filter(c => c.status === 'pending').length;
+            let html = `
+                <div class="toolbar">
+                    <select id="commentStatusFilter" onchange="filterComments()">
+                        <option value="">全部状态</option>
+                        <option value="approved">✅ 已通过</option>
+                        <option value="pending" selected>⏳ 待审核</option>
+                        <option value="rejected">❌ 已拒绝</option>
+                    </select>
+                    <button class="ai-moderate-btn" id="aiModerateBtn" onclick="aiModerateComments()" ${pendingCount === 0 ? 'disabled' : ''}>
+                        <span class="spinner"></span><span class="btn-text">✨ AI 自动审核 (${pendingCount}条待审)</span>
+                    </button>
+                </div>
+                <div class="panel">
+                    <table>
+                        <thead>
+                            <tr><th>ID</th><th>所属帖子</th><th>作者</th><th>内容</th><th>AI判定</th><th>时间</th><th>状态</th><th style="width:200px;">操作</th></tr>
+                        </thead>
+                        <tbody>`;
+
+            comments.forEach(c => {
+                const post = posts.find(p => p.id === c.postId);
+                const verdictTag = c.aiReason
+                    ? `<span class="score-tag ${c.status === 'approved' ? 'safe' : (c.status === 'rejected' ? 'spam' : 'harassment')}" title="${c.aiReason}">${c.aiReason.substring(0, 8)}</span>`
+                    : '<span style="font-size:10px;color:var(--text-muted);">-</span>';
+
+                html += `
+                    <tr style="${c.status==='pending'?'background:#FFFBEB;':''}">
+                        <td>${c.id}</td>
+                        <td style="font-size:12px;">${post ? post.title.substring(0,15)+'...' : '未知'}</td>
+                        <td>${c.author}</td>
+                        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.text}</td>
+                        <td>${verdictTag}</td>
+                        <td>${c.time}</td>
+                        <td><span class="tag ${c.status==='approved'?'tag-green':c.status==='pending'?'tag-yellow':'tag-red'}">${c.status==='approved'?'通过':c.status==='pending'?'待审':'拒绝'}</span></td>
+                        <td>
+                            ${c.status === 'pending' ? `
+                                <button class="btn btn-success btn-xs" onclick="approveComment(${c.id})">✅ 通过</button>
+                                <button class="btn btn-danger btn-xs" onclick="rejectComment(${c.id})">❌ 拒绝</button>
+                            ` : `
+                                <button class="btn btn-outline btn-xs" onclick="toggleCommentStatus(${c.id})">🔄 改状态</button>
+                            `}
+                            <button class="btn btn-danger btn-xs" onclick="confirmDeleteComment(${c.id})">🗑</button>
+                        </td>
+                    </tr>`;
+            });
+
+            html += `</tbody></table>
+                ${comments.length === 0 ? '<div style="text-align:center;padding:40px;color:var(--text-muted);">没有找到评论</div>' : ''}
+                </div>`;
+            return html;
+        };
+
+        // ==================== 举报管理 ====================
+        function renderReports(){
+          return '<div class="panel" style="overflow-x:auto;"><table><thead><tr><th>ID</th><th>帖子</th><th>举报人</th><th>原因</th><th>说明</th><th>时间</th><th>状态</th><th>操作</th></tr></thead><tbody id="reportsTableBody"><tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">加载中...</td></tr></tbody></table></div>';
+        }
+
+        function bindReportEvents(){
+          loadReports();
+        }
+
+        async function loadReports(){
+          var token = localStorage.getItem('closd_token');
+          if(!token) return;
+          try{
+            var resp = await fetch('/api/reports',{headers:{'Authorization':'Bearer '+token}});
+            var reports = await resp.json();
+            var tbody = document.getElementById('reportsTableBody');
+            if(!tbody) return;
+            if(!reports||reports.length===0){
+              tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">暂无举报</td></tr>';
+            }else{
+              var reasons={spam:'垃圾广告',harassment:'人身攻击',inappropriate:'不当内容',other:'其他'};
+              tbody.innerHTML=reports.map(function(r){
+                return '<tr><td>'+r.id+'</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+ (r.postTitle||'') +'</td><td>'+r.reporter+'</td><td>'+ (reasons[r.reason]||r.reason) +'</td><td style="max-width:100px;font-size:11px;">'+(r.detail||'')+'</td><td>'+new Date(r.time).toLocaleString('zh-CN')+'</td><td><span class="tag '+(r.status==='pending'?'tag-yellow':'tag-green')+'">'+(r.status==='pending'?'待处理':r.status)+'</span></td><td>'+(r.status==='pending'?'<button class="btn btn-danger btn-xs" onclick="handleReport('+r.id+',\'delete_post\')">删帖</button> <button class="btn btn-outline btn-xs" onclick="handleReport('+r.id+',\'dismiss\')">忽略</button>':'已处理')+'</td></tr>';
+              }).join('');
+            }
+            document.getElementById('reportPendingBadge').textContent=reports.filter(function(r){return r.status==='pending'}).length;
+          }catch(e){}
+        }
+
+        async function handleReport(id, action){
+          var token = localStorage.getItem('closd_token');
+          if(!token) return;
+          try{
+            var resp = await fetch('/api/reports/'+id,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:action})});
+            if(!resp.ok) throw new Error('failed');
+            showToast(action==='delete_post'?'帖子已删除':'举报已忽略');
+            loadReports();
+          }catch(e){ showToast('操作失败') }
+        }
+
+        // ==================== 数据看板 ====================
+        function renderAnalytics(){
+          return '<div class="panel"><div class="panel-header"><h2>📊 数据总览</h2></div><div class="panel-body"><div class="stats-grid" id="analyticsOverview"></div></div></div>'
+            +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">'
+            +'<div class="panel"><div class="panel-header"><h2>📈 7日帖子趋势</h2></div><div class="panel-body"><div class="bar-chart" id="dailyChart"></div></div></div>'
+            +'<div class="panel"><div class="panel-header"><h2>📂 板块分布</h2></div><div class="panel-body"><div class="bar-chart" id="forumChart"></div></div></div>'
+            +'<div class="panel"><div class="panel-header"><h2>✍️ 作者排行</h2></div><div class="panel-body"><div id="authorRank"></div></div></div>'
+            +'</div>';
+        }
+        function bindAnalyticsEvents(){
+          var token = localStorage.getItem('closd_token');
+          if(!token) return;
+          fetch('/api/admin/stats',{headers:{'Authorization':'Bearer '+token}}).then(function(r){return r.json()}).then(function(d){
+            // Overview
+            var ov = document.getElementById('analyticsOverview');
+            if(ov) ov.innerHTML = [
+              {label:'用户',value:d.overview.users,icon:'👥',bg:'#EEF0FF'},
+              {label:'帖子',value:d.overview.posts,icon:'📝',bg:'#D1FAE5'},
+              {label:'关注',value:d.overview.follows,icon:'🔗',bg:'#FEF3C7'},
+              {label:'总赞',value:d.overview.totalLikes,icon:'👍',bg:'#FEE2E2'},
+            ].map(function(s){return '<div class="stat-card"><div class="stat-icon" style="background:'+s.bg+'">'+s.icon+'</div><div class="stat-info"><div class="stat-value">'+s.value+'</div><div class="stat-label">'+s.label+'</div></div></div>'}).join('');
+            // Daily trend
+            var maxD = Math.max.apply(null,d.dailyTrend.map(function(x){return x.count}))||1;
+            var dc = document.getElementById('dailyChart');
+            if(dc) dc.innerHTML = d.dailyTrend.map(function(day){var h=Math.max(day.count/maxD*120,4);return'<div class="bar-item"><div class="bar-value">'+day.count+'</div><div class="bar" style="height:'+h+'px;background:linear-gradient(180deg,#5B6AF0,#8B5CF6)"></div><div class="bar-label">'+day.date+'</div></div>'}).join('');
+            // Forum
+            var forumIds = Object.keys(d.forumDistribution||{});
+            var maxF = Math.max.apply(null,forumIds.map(function(k){return d.forumDistribution[k]}))||1;
+            var fc = document.getElementById('forumChart');
+            if(fc) fc.innerHTML = forumIds.slice(0,8).map(function(k){var h=Math.max(d.forumDistribution[k]/maxF*120,10);return'<div class="bar-item"><div class="bar-value">'+d.forumDistribution[k]+'</div><div class="bar" style="height:'+h+'px;background:linear-gradient(180deg,#10B981,#34D399)"></div><div class="bar-label">'+k+'</div></div>'}).join('');
+            // Authors
+            var ar = document.getElementById('authorRank');
+            if(ar) ar.innerHTML = '<table>'+d.topAuthors.map(function(a,i){return'<tr><td>'+(i+1)+'</td><td>'+a.name+'</td><td>'+a.count+'篇</td></tr>'}).join('')+'</table>';
+          }).catch(function(){});
+        }
+
+        // ==================== 公告管理 ====================
+        function bindDashboardEvents(){
+          // Add announcement form to dashboard
+          var main = document.querySelector('.admin-main');
+          var existing = document.getElementById('announcePanel');
+          if(existing) existing.remove();
+          var panel = document.createElement('div');
+          panel.id = 'announcePanel';
+          panel.className = 'panel';
+          panel.innerHTML = '<div class="panel-header"><h2>📢 发布全站公告</h2></div><div class="panel-body"><div style="display:flex;gap:8px;"><input type="text" id="announceInput" placeholder="公告内容..." style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;"><button class="btn btn-primary btn-sm" onclick="postAnnouncement()">发布</button></div><div id="announceList" style="margin-top:10px;font-size:12px;"></div></div>';
+          var content = document.getElementById('pageContent');
+          content.appendChild(panel);
+          loadAnnounceList();
+        }
+
+        async function postAnnouncement(){
+          var inp = document.getElementById('announceInput');
+          var text = inp.value.trim();
+          if(!text) return;
+          var token = localStorage.getItem('closd_token');
+          try{
+            await fetch('/api/announcements',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({text:text})});
+            inp.value=''; loadAnnounceList(); showToast('公告已发布');
+          }catch(e){ showToast('发布失败') }
+        }
+
+        async function loadAnnounceList(){
+          var token = localStorage.getItem('closd_token');
+          try{
+            var resp = await fetch('/api/announcements',{headers:{'Authorization':'Bearer '+token}});
+            var list = await resp.json();
+            var el = document.getElementById('announceList');
+            if(!el) return;
+            el.innerHTML = list.length?list.map(function(a){return '<div style="padding:4px 0;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;"><span>'+a.text+'</span><button class="btn btn-danger btn-xs" onclick="deleteAnnounce('+a.id+')">删除</button></div>'}).join(''):'暂无公告';
+          }catch(e){}
+        }
+
+        async function deleteAnnounce(id){
+          var token = localStorage.getItem('closd_token');
+          await fetch('/api/announcements/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+token}});
+          loadAnnounceList(); showToast('公告已删除');
+        }
+
+        // ==================== 角色管理 ====================
+        async function setUserRole(username, role){
+          var token = localStorage.getItem('closd_token');
+          try{
+            await fetch('/api/users/'+encodeURIComponent(username)+'/role',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({role:role})});
+            switchPage('users',document.querySelector('.sidebar-nav a:nth-child(3)'));
+            showToast(username+' -> '+role);
+          }catch(e){ showToast('操作失败: '+e.message) }
+        }
+
+        // Override renderUsers to add role buttons
+        var _origRenderUsers = renderUsers;
+        renderUsers = function(filter){
+          var html = _origRenderUsers(filter);
+          setTimeout(function(){
+            var tbody = document.querySelector('#pageContent tbody');
+            if(!tbody) return;
+            var rows = tbody.querySelectorAll('tr');
+            rows.forEach(function(row){
+              var nameCell = row.querySelector('td:nth-child(2)');
+              if(!nameCell) return;
+              var username = nameCell.textContent.trim();
+              var actions = row.querySelector('td:last-child');
+              if(!actions) return;
+              if(!actions.querySelector('.role-btn')){
+                var btnGroup = document.createElement('span');
+                btnGroup.innerHTML = ' <button class="btn btn-outline btn-xs role-btn" onclick="setUserRole(\''+username+'\',\'moderator\')">版主</button> <button class="btn btn-outline btn-xs role-btn" onclick="setUserRole(\''+username+'\',\'user\')">用户</button>';
+                actions.appendChild(btnGroup);
+              }
+            });
+          },100);
+          return html;
+        };
+
+        // ==================== 初始化 ====================
+        updateBadges();
+        document.getElementById('loginPass').focus();
+    </script>
+</body>
+</html>

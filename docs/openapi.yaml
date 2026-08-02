@@ -1,0 +1,352 @@
+openapi: "3.0.3"
+info:
+  title: CLOSD Community API
+  version: "1.0.0"
+  description: |
+    CLOSD 社区平台 REST API — 用户认证、帖子互动、AI 功能、经验系统。
+    Base URL: `http://localhost:8080`
+  contact:
+    name: CLOSD Team
+
+servers:
+  - url: http://localhost:8080
+    description: 本地开发服务器
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ─── Auth ───
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: 用户注册
+      operationId: register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string, minLength: 2, maxLength: 12 }
+                password: { type: string, minLength: 6 }
+      responses:
+        '200': { description: 注册成功, content: { application/json: { schema: { $ref: '#/components/schemas/AuthResponse' } } } }
+        '400': { description: 参数错误 }
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: 用户登录
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        '200': { description: 登录成功 }
+        '401': { description: 用户名或密码错误 }
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: 获取当前用户信息
+      operationId: getMe
+      responses:
+        '200': { description: 用户信息 }
+
+  /api/auth/phone-code:
+    post:
+      tags: [Auth]
+      summary: 发送手机验证码 (模拟)
+      operationId: sendPhoneCode
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone: { type: string, pattern: '^1\d{10}$' }
+      responses:
+        '200': { description: 验证码 (开发环境直接返回) }
+
+  /api/auth/phone-login:
+    post:
+      tags: [Auth]
+      summary: 手机号登录
+      operationId: phoneLogin
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, code]
+              properties:
+                phone: { type: string }
+                code: { type: string }
+      responses:
+        '200': { description: 登录成功 }
+
+  # ─── Users ───
+  /api/users/{username}:
+    get:
+      tags: [Users]
+      summary: 用户主页
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+      security: []
+      responses:
+        '200': { description: 用户信息 }
+        '404': { description: 用户不存在 }
+
+  /api/users/{username}/follow:
+    post:
+      tags: [Users]
+      summary: 关注/取消关注
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: '{following: true/false}' }
+        '400': { description: 不能关注自己 }
+
+  /api/users/{username}/followers:
+    get:
+      tags: [Users]
+      summary: 粉丝列表
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+      security: []
+      responses:
+        '200': { description: 用户名数组 }
+
+  /api/users/{username}/following:
+    get:
+      tags: [Users]
+      summary: 关注列表
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+      security: []
+      responses:
+        '200': { description: 用户名数组 }
+
+  /api/users/{username}/is-following:
+    get:
+      tags: [Users]
+      summary: 是否已关注
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: '{following: true/false}' }
+
+  /api/users/{username}/xp:
+    get:
+      tags: [Users]
+      summary: 用户经验值
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+      security: []
+      responses:
+        '200': { description: '{xp, level, nextLevel}' }
+
+  # ─── Notifications ───
+  /api/notifications:
+    get:
+      tags: [Notifications]
+      summary: 通知列表 (最近50条)
+      responses:
+        '200': { description: 通知数组 }
+    post:
+      tags: [Notifications]
+      summary: 创建通知
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, to, text]
+              properties:
+                type: { type: string, enum: [follow, like, reply] }
+                to: { type: string }
+                text: { type: string }
+      responses:
+        '200': { description: 创建成功 }
+
+  /api/notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: 未读通知数
+      responses:
+        '200': { description: '{count: N}' }
+
+  /api/notifications/read:
+    post:
+      tags: [Notifications]
+      summary: 标记已读
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids: { type: array, items: { type: integer } }
+      responses:
+        '200': { description: 标记成功 }
+
+  # ─── Bookmarks ───
+  /api/bookmarks:
+    get:
+      tags: [Bookmarks]
+      summary: 我的收藏
+      responses:
+        '200': { description: 帖子ID数组 }
+
+  /api/bookmarks/{postId}:
+    post:
+      tags: [Bookmarks]
+      summary: 切换收藏
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{bookmarked: true/false}' }
+
+  /api/bookmarks/check/{postId}:
+    get:
+      tags: [Bookmarks]
+      summary: 检查收藏状态
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: '{bookmarked: true/false}' }
+
+  # ─── Tags ───
+  /api/tags/trending:
+    get:
+      tags: [Tags]
+      summary: 热门标签
+      security: []
+      responses:
+        '200': { description: '[{name, count}, ...]' }
+
+  /api/tags/use:
+    post:
+      tags: [Tags]
+      summary: 记录标签使用
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tags: { type: array, items: { type: string } }
+      responses:
+        '200': { description: 记录成功 }
+
+  # ─── XP ───
+  /api/xp/add:
+    post:
+      tags: [XP]
+      summary: 添加经验值
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: '{xp, level}' }
+
+  /api/xp/leaderboard:
+    get:
+      tags: [XP]
+      summary: 经验排行榜
+      security: []
+      responses:
+        '200': { description: '[{username, xp, level}, ...]' }
+
+  # ─── AI ───
+  /api/ai/chat:
+    post:
+      tags: [AI]
+      summary: AI 对话
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messages: { type: array, items: { type: object, properties: { role: { type: string }, content: { type: string } } } }
+                context: { type: string }
+      responses:
+        '200': { description: '{reply}' }
+
+  /api/ai/generate:
+    post:
+      tags: [AI]
+      summary: AI 内容生成
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type: { type: string, enum: [title, polish, outline, reply] }
+                input: { type: string }
+                forum: { type: string }
+      responses:
+        '200': { description: '{result}' }
+
+  /api/health:
+    get:
+      tags: [System]
+      summary: 健康检查
+      security: []
+      responses:
+        '200': { description: '{status, aiConfigured, model, timestamp}' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 通过 /api/auth/login 获取的 JWT token
+
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        token: { type: string, description: JWT token, 有效期7天 }
+        user:
+          type: object
+          properties:
+            username: { type: string }
+            joinDate: { type: string, format: date }
+
+    Error:
+      type: object
+      properties:
+        error: { type: string }
