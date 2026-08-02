@@ -41,7 +41,19 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 // ─── 中间件 ─────────────────────────────────────────────────────
-app.use(cors());
+// CORS — 生产环境仅允许应用自身域名
+const ALLOWED_ORIGINS = (process.env.APP_URL || 'http://localhost:8080').split(',');
+app.use(cors({
+  origin: (origin, callback) => {
+    // 允许无 origin 的请求（移动端、桌面应用、curl 等）
+    if (!origin || ALLOWED_ORIGINS.some(o => origin.startsWith(o))) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed'));
+    }
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: '1mb' }));
 
 // Rate limiting — 每分钟最多 30 次 AI 请求
@@ -205,9 +217,18 @@ app.post('/api/upload/multi', authMiddleware, upload.array('images', 9), (req, r
   res.json({ images: req.files.map(f => ({ url: '/uploads/' + f.filename, name: f.originalname, size: f.size })) });
 });
 
-// 静态文件服务
+// 静态文件服务 — 只暴露必要的目录，严格阻止 data/ node_modules/ 等敏感目录
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(__dirname, {
   index: false,
+  setHeaders: (res, filePath) => {
+    // 阻止访问敏感目录
+    if (filePath.includes('\\data\\') || filePath.includes('/data/') ||
+        filePath.includes('\\node_modules\\') || filePath.includes('/node_modules/') ||
+        filePath.includes('\\.env') || filePath.includes('/.env')) {
+      res.status(403).end();
+    }
+  },
 }));
 
 // ─── OpenAI API 调用封装 ────────────────────────────────────────
@@ -275,7 +296,7 @@ app.post('/api/ai/chat', aiLimiter, async (req, res) => {
     res.json({ reply });
   } catch (err) {
     console.error('[chat]', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: '服务器内部错误' });
   }
 });
 
@@ -312,7 +333,7 @@ app.post('/api/ai/generate', aiLimiter, async (req, res) => {
     res.json({ result });
   } catch (err) {
     console.error('[generate]', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: '服务器内部错误' });
   }
 });
 
@@ -361,7 +382,7 @@ ${itemsText}
     res.json({ results: parsed });
   } catch (err) {
     console.error('[moderate]', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: '服务器内部错误' });
   }
 });
 
@@ -381,7 +402,7 @@ app.post('/api/ai/summarize', aiLimiter, async (req, res) => {
     res.json({ summary: result });
   } catch (err) {
     console.error('[summarize]', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: '服务器内部错误' });
   }
 });
 
@@ -413,7 +434,7 @@ app.get('/api/ai/trending', aiLimiter, async (req, res) => {
     res.json({ insights: parsed });
   } catch (err) {
     console.error('[trending]', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: '服务器内部错误' });
   }
 });
 
@@ -531,7 +552,7 @@ app.post('/api/billing/checkout', authMiddleware, async (req, res) => {
     res.json({ url: checkoutUrl });
   } catch (err) {
     console.error('[billing:checkout]', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: '服务器内部错误' });
   }
 });
 
@@ -551,13 +572,18 @@ app.post('/api/billing/webhook', (req, res, next) => {
     // 验证签名
     const crypto = require('crypto');
     const signature = req.headers['x-signature'];
-    if (LEMON_SQUEEZY_WEBHOOK_SECRET && signature && req.rawBody) {
-      const hmac = crypto.createHmac('sha256', LEMON_SQUEEZY_WEBHOOK_SECRET);
-      const digest = hmac.update(req.rawBody).digest('hex');
-      if (digest !== signature) {
-        console.error('[lemon] webhook 签名验证失败');
-        return res.status(401).json({ error: '签名验证失败' });
-      }
+    if (!LEMON_SQUEEZY_WEBHOOK_SECRET) {
+      console.error('[lemon] Webhook secret 未配置，拒绝所有 webhook');
+      return res.status(500).json({ error: 'Webhook 未配置' });
+    }
+    if (!signature || !req.rawBody) {
+      return res.status(401).json({ error: '缺少签名' });
+    }
+    const hmac = crypto.createHmac('sha256', LEMON_SQUEEZY_WEBHOOK_SECRET);
+    const digest = hmac.update(req.rawBody).digest('hex');
+    if (!crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signature))) {
+      console.error('[lemon] webhook 签名验证失败');
+      return res.status(401).json({ error: '签名验证失败' });
     }
 
     const payload = req.body;
@@ -619,7 +645,7 @@ app.post('/api/billing/webhook', (req, res, next) => {
     res.json({ received: true });
   } catch (err) {
     console.error('[billing:webhook]', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: '服务器内部错误' });
   }
 });
 
@@ -703,14 +729,20 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
   } catch (err) { sendErr(res, err, 'auth'); }
 });
 
+// ── 手机验证码存储（服务端，带过期时间） ────────────────
+// 格式: { phone: { code, expiresAt } }
+const phoneCodes = {};
+
 // POST /api/auth/phone-code
-app.post('/api/auth/phone-code', (req, res) => {
+app.post('/api/auth/phone-code', authLimiter, (req, res) => {
   const { phone } = req.body;
   if (!phone || !/^1\d{10}$/.test(phone)) return res.status(400).json({ error: '请输入正确的手机号' });
   const code = String(Math.floor(100000 + Math.random() * 900000));
-  // 模拟：控制台输出验证码
+  // 存储验证码，5 分钟有效
+  phoneCodes[phone] = { code, expiresAt: Date.now() + 5 * 60 * 1000 };
+  // 开发环境控制台输出，生产环境通过短信发送
   console.log(`[短信验证码] ${phone} → ${code}`);
-  res.json({ code }); // 开发环境直接返回，生产环境应通过短信发送
+  res.json({ ok: true });  // 不再返回验证码给客户端
 });
 
 // POST /api/auth/phone-login
@@ -718,8 +750,17 @@ app.post('/api/auth/phone-login', authLimiter, async (req, res) => {
   try {
     const { phone, code } = req.body;
     if (!phone || !code) return res.status(400).json({ error: '手机号和验证码不能为空' });
-    // 开发环境接受任意 6 位验证码
-    if (code.length !== 6) return res.status(400).json({ error: '验证码错误' });
+
+    // 验证码校验
+    const stored = phoneCodes[phone];
+    if (!stored || stored.expiresAt < Date.now()) {
+      return res.status(400).json({ error: '验证码已过期，请重新获取' });
+    }
+    if (stored.code !== code) {
+      return res.status(400).json({ error: '验证码错误' });
+    }
+    // 验证通过，清除验证码
+    delete phoneCodes[phone];
 
     const users = readJSON('users.json') || [];
     let user = users.find(u => u.phone === phone);
