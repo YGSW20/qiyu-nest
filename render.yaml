@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: qiyu-nest
+    env: node
+    region: singapore
+    buildCommand: npm install
+    startCommand: node server.js
+    plan: free
+    envVars:
+      - key: NODE_VERSION
+        value: 20.0.0
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        sync: false
+      - key: OPENAI_MODEL
+        value: deepseek-chat
+      - key: PORT
+        value: "8080"
