@@ -38,6 +38,12 @@ OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
 
 const app = express();
+// ─── 全局未处理 Promise 拒绝（防止 async writeJSON 崩溃进程） ──────
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[unhandledRejection]', reason?.message || reason);
+});
+
+
 const PORT = process.env.PORT || 8080;
 
 // ─── 中间件 ─────────────────────────────────────────────────────
@@ -217,19 +223,17 @@ app.post('/api/upload/multi', authMiddleware, upload.array('images', 9), (req, r
   res.json({ images: req.files.map(f => ({ url: '/uploads/' + f.filename, name: f.originalname, size: f.size })) });
 });
 
-// 静态文件服务 — 只暴露必要的目录，严格阻止 data/ node_modules/ 等敏感目录
+// 静态文件服务 — 只暴露必要的目录，阻止访问 data/ node_modules/ 等敏感目录
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(express.static(__dirname, {
-  index: false,
-  setHeaders: (res, filePath) => {
-    // 阻止访问敏感目录
-    if (filePath.includes('\\data\\') || filePath.includes('/data/') ||
-        filePath.includes('\\node_modules\\') || filePath.includes('/node_modules/') ||
-        filePath.includes('\\.env') || filePath.includes('/.env')) {
-      res.status(403).end();
-    }
-  },
-}));
+// 敏感路径拦截 — 在 static 之前执行，避免 setHeaders 导致的 ERR_HTTP_HEADERS_SENT
+app.use((req, res, next) => {
+  const p = req.path;
+  if (p.startsWith('/data/') || p.startsWith('/node_modules/') || p === '/.env') {
+    return res.status(403).end();
+  }
+  next();
+});
+app.use(express.static(__dirname, { index: false }));
 
 // ─── OpenAI API 调用封装 ────────────────────────────────────────
 async function callOpenAI(messages, options = {}) {
@@ -696,7 +700,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       joinDate: new Date().toISOString().split('T')[0],
     };
     users.push(newUser);
-    writeJSON('users.json', users);
+    await writeJSON('users.json', users);
 
     const token = signToken(username, req.body.remember);
     // Auto-subscribe to popular forums
