@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
-  "buildCommand": "cd qiyu-landing && npm install && npm run build",
-  "outputDirectory": "qiyu-landing/.next",
-  "installCommand": "cd qiyu-landing && npm install"
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install"
 }
