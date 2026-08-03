@@ -2162,17 +2162,6 @@ function submitPost(){
 }
 
 
-// First-time visitor onboarding
-(function(){
-  if(localStorage.getItem('nest_onboarded')) return;
-  setTimeout(function(){
-    var tip = document.createElement('div');
-    tip.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:200;background:var(--card);border-radius:var(--radius-lg);padding:20px 28px;box-shadow:var(--shadow-lg);text-align:center;max-width:380px;font-size:13px;line-height:1.6;border:0.5px solid var(--border-light);';
-    tip.innerHTML = '<div style="font-size:28px;margin-bottom:8px;">🪹</div><b>欢迎来到栖语 Nest</b><br><br>这里是话语栖息之地<br>🔔 点击板块右边的铃铛订阅<br>✨ 右下角AI助手随时帮忙<br>⌨️ Ctrl+N 快速发帖<br>👤 点用户名关注有趣的人<br><br><button class="btn btn-submit" style="padding:6px 24px;" onclick="this.parentElement.parentElement.remove();localStorage.setItem(\'nest_onboarded\',\'1\')">开始探索 →</button>';
-    document.body.appendChild(tip);
-  },1500);
-})();
-
 // Auto-restore session on page load — 验证token有效性
 (function(){
   var user=getCurrentUser(), token=getToken();
