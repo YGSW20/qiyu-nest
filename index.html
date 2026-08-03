@@ -456,6 +456,40 @@ body {
 }
 .toast.show { opacity:1; }
 
+/* ===== Skeleton Loading ===== */
+.skeleton-card { background:var(--card); border-radius:var(--radius-lg); padding:20px 24px; margin-bottom:12px; animation:skeleton-pulse 1.5s ease-in-out infinite; border:0.5px solid var(--border); }
+.skeleton-line { height:14px; background:var(--fill); border-radius:6px; margin-bottom:8px; }
+.skeleton-line.w60 { width:60%; } .skeleton-line.w80 { width:80%; } .skeleton-line.w40 { width:40%; }
+@keyframes skeleton-pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+/* ===== Page Transitions ===== */
+.post-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.post-card:hover { transform:translateY(-1px); box-shadow:var(--shadow-md); }
+.modal-overlay { transition:opacity 0.2s ease; }
+.modal-overlay.show { opacity:1; }
+.detail-overlay { transition:opacity 0.2s ease; }
+
+/* ===== Mobile Touch ===== */
+@media (max-width:768px) {
+  .post-card { -webkit-tap-highlight-color:transparent; }
+  .post-card:active { transform:scale(0.98); transition:transform 0.1s; }
+  button, .btn, .sidebar-item, .tab-tag, .tag-badge, .nav a, .mention-item {
+    min-height:44px; display:flex; align-items:center;
+  }
+  .editor-toolbar button { min-width:44px; min-height:44px; font-size:14px; }
+  .ai-assist-btn { min-height:36px; padding:6px 10px; }
+  .modal { border-radius:var(--radius-xl) var(--radius-xl) 0 0; margin-top:auto; max-height:92vh; }
+  input, textarea, select { font-size:16px !important; }
+  .comment-input-row input { font-size:14px !important; min-height:40px; }
+}
+
+/* Pull to refresh indicator */
+.pull-indicator {
+  text-align:center; color:var(--text-tertiary); font-size:13px;
+  padding:0; max-height:0; overflow:hidden; transition:max-height 0.2s;
+}
+.pull-indicator.show { max-height:40px; padding:8px; }
+
 /* ===== Confirm ===== */
 .confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.3); display:none; align-items:center; justify-content:center; z-index:280; backdrop-filter:blur(4px); }
 .confirm-overlay.show { display:flex; }
@@ -1027,6 +1061,7 @@ body {
     <span class="sort-option" onclick="applyFilters(this,'range','week')">本周</span>
     <span class="sort-option" onclick="applyFilters(this,'range','month')">本月</span>
   </div>
+  <div class="pull-indicator" id="pullIndicator">↓ 下拉刷新</div>
   <div id="postList"></div>
   <div style="text-align:center;padding:20px;"><button class="btn btn-cancel" onclick="loadMore()" id="loadMoreBtn">加载更多</button></div>
 </main>
@@ -1172,13 +1207,15 @@ body {
       </div>
     </div>
     <div class="editor-toolbar" id="editorToolbar">
-      <button onclick="editorAction('bold')" title="加粗"><b>B</b></button>
-      <button onclick="editorAction('italic')" title="斜体"><i>I</i></button>
+      <button onclick="editorAction('bold')" title="加粗 (Ctrl+B)"><b>B</b></button>
+      <button onclick="editorAction('italic')" title="斜体 (Ctrl+I)"><i>I</i></button>
+      <button onclick="editorAction('heading')" title="标题">H</button>
       <button onclick="editorAction('code')" title="代码">&lt;/&gt;</button>
       <button onclick="editorAction('link')" title="链接">🔗</button>
       <button onclick="editorAction('list')" title="列表">•</button>
+      <button onclick="editorAction('quote')" title="引用">❝</button>
       <button onclick="toggleEmoji()" title="表情">😊</button>
-      <button onclick="togglePreview()" title="预览" style="margin-left:auto;">👁</button>
+      <button onclick="togglePreview()" title="预览" style="margin-left:auto">👁</button>
     </div>
     <div class="emoji-panel" id="emojiPanel"></div>
     <div class="mention-dropdown" id="mentionDropdown"></div>
@@ -1880,6 +1917,31 @@ async function loadPosts(forum, sort, range){
   }catch(e){ console.warn('[posts]',e.message) }
 }
 
+// ==================== Loading Skeleton ====================
+function showSkeleton() {
+  var c = $('postList');
+  c.innerHTML = Array.from({length:5}, function(_,i){
+    return '<div class="skeleton-card" style="animation-delay:'+(i*0.05)+'s"><div class="skeleton-line w60"></div><div class="skeleton-line w80"></div><div class="skeleton-line w40"></div></div>';
+  }).join('');
+}
+// ==================== Toast Queue ====================
+var toastQueue = []; var toastTimer = null;
+function showToast(msg, duration) {
+  duration = duration || 2500;
+  toastQueue.push({msg:msg, duration:duration});
+  if (!toastTimer) processToastQueue();
+}
+function processToastQueue() {
+  if (toastQueue.length === 0) { toastTimer = null; return; }
+  var item = toastQueue.shift();
+  var toast = $('toast');
+  toast.textContent = item.msg; toast.classList.add('show');
+  toastTimer = setTimeout(function(){
+    toast.classList.remove('show');
+    setTimeout(processToastQueue, 200);
+  }, item.duration);
+}
+
 // ==================== Render ====================
 function renderPosts(){
   var c=$('postList');
@@ -1973,7 +2035,7 @@ function openPost(id){
   $('detailBody').innerHTML=`
     <div class="detail-author">${renderAvatar(p.author, p.authorAvatar||'', p.authorColor||'', 38)}<div><div class="detail-author-name" style="cursor:pointer;color:var(--blue)" onclick="showUserProfile('${esc(p.author)}')">${p.author}</div><div class="detail-author-time">${p.time} · ${p.views>=1000?(p.views/1000).toFixed(1)+'k':p.views} 浏览</div></div><button class="follow-btn following" style="align-self:center" id="detailFollowBtn" onclick="toggleFollow('${esc(p.author)}',this)">+ 关注</button></div>
     <div class="detail-title">${p.pinned?'📌 ':''}${p.title}</div>
-    <div class="detail-content">${p.content}</div>
+    <div class="detail-content">${renderMarkdown(p.content)}</div>
     ${renderDetailImages(p.images)}
     ${renderPollCard(p.poll, p.id, p.pollVoters)}
     ${(getCurrentUser()&&getCurrentUser().username===p.author?'<div style="margin-bottom:8px;"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();closeDetail();openPostModal('+p.id+')">✏️ 编辑</button></div>':'')}
@@ -2098,7 +2160,7 @@ function submitPost(){
   currentPosts.unshift({id:newId,title:t,content:ct||'(无内容)',author:currentUserName(),forum:f,time:'刚刚',replies:0,likes:0,views:0,pinned:false,images:[],comments:[]});
   renderPosts(); closePostModal(); showToast('发布成功！');
 }
-function showToast(msg){ var t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(function(){t.classList.remove('show')},2000) }
+
 
 // First-time visitor onboarding
 (function(){
@@ -2725,12 +2787,21 @@ async function saveTags() {
   try { await apiCall('/tags/use', { method: 'POST', body: { tags: currentTags } }); } catch (e) { console.warn('[tags] use failed:', e.message) }
 }
 
-function filterByTag(tag) {
+async function filterByTag(tag) {
   currentForum = 'tag'; currentFilter = tag;
-  currentPosts = [...samplePosts].filter(function(p) { return p.tags && p.tags.includes(tag); });
-  $$('.sidebar-item').forEach(function(e) { e.classList.remove('active'); });
-  renderPosts();
-  showToast('标签: #' + tag + ' (' + currentPosts.length + '条)');
+  try {
+    var data = await apiCall('/api/search?q=' + encodeURIComponent(tag));
+    currentPosts = (data.results || []).map(function(p) {
+      if (!p.comments) p.comments = [];
+      if (!p.tags) p.tags = [];
+      return p;
+    });
+    $$('.sidebar-item').forEach(function(e) { e.classList.remove('active'); });
+    renderPosts();
+    showToast('#' + tag + ' (' + currentPosts.length + ' 条结果)');
+  } catch(e) {
+    showToast('搜索失败: ' + e.message);
+  }
 }
 
 async function loadHotTags() {
@@ -2876,8 +2947,10 @@ function editorAction(action) {
     case 'bold': wrap = '**' + (sel || '加粗文字') + '**'; break;
     case 'italic': wrap = '*' + (sel || '斜体文字') + '*'; break;
     case 'code': wrap = '`' + (sel || '代码') + '`'; break;
+    case 'heading': wrap = '\n## ' + (sel || '二级标题'); break;
     case 'link': wrap = '[' + (sel || '链接文字') + '](url)'; break;
     case 'list': wrap = '\n- ' + (sel || '列表项'); break;
+    case 'quote': wrap = '\n> ' + (sel || '引用文字'); break;
   }
 
   ta.value = text.substring(0, s) + wrap + text.substring(e);
@@ -2927,24 +3000,38 @@ function insertEmoji(emoji) {
 }
 
 // @mention
+var mentionIndex = -1;
+
 $('postContent').addEventListener('keydown', function(e) {
-  if (e.key === '@') {
+  var dd = $('mentionDropdown');
+  if (dd.classList.contains('show')) {
+    var items = dd.querySelectorAll('.mention-item');
+    if (e.key === 'ArrowDown') { e.preventDefault(); mentionIndex = Math.min(mentionIndex + 1, items.length - 1); updateMentionHighlight(items); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); mentionIndex = Math.max(mentionIndex - 1, 0); updateMentionHighlight(items); }
+    else if (e.key === 'Enter' && mentionIndex >= 0) { e.preventDefault(); items[mentionIndex].click(); }
+    else if (e.key === 'Escape') { dd.classList.remove('show'); mentionIndex = -1; }
+    else if (e.key === '@') { setTimeout(showMentionDropdown, 100); }
+    else { setTimeout(showMentionDropdown, 100); }
+  } else if (e.key === '@') {
     setTimeout(showMentionDropdown, 100);
-  } else if (e.key === 'Escape') {
-    $('mentionDropdown').classList.remove('show');
   }
 });
+
+function updateMentionHighlight(items) {
+  items.forEach(function(item, i) { item.classList.toggle('active', i === mentionIndex); });
+}
 
 async function showMentionDropdown() {
   var ta = $('postContent');
   var text = ta.value.substring(0, ta.selectionStart);
   var match = text.match(/@([\w一-鿿]*)$/);
-  if (!match) { $('mentionDropdown').classList.remove('show'); return; }
+  if (!match) { $('mentionDropdown').classList.remove('show'); mentionIndex = -1; return; }
   var query = match[1].toLowerCase();
   try {
     var users = await apiCall('/api/users/search?q='+encodeURIComponent(query));
     if (!users||users.length===0){ $('mentionDropdown').classList.remove('show'); return }
     var dd = $('mentionDropdown');
+    mentionIndex = -1;
     dd.innerHTML = users.map(function(u){return '<div class="mention-item" onclick="insertMention(\''+esc(u)+'\')">'+u+'</div>'}).join('');
     dd.classList.add('show');
   }catch(e){}
@@ -2960,6 +3047,29 @@ function insertMention(username) {
   var pos = before.length + username.length + 2;
   ta.selectionStart = ta.selectionEnd = pos;
   $('mentionDropdown').classList.remove('show');
+  mentionIndex = -1;
+}
+
+// @mention in comment input
+$('commentInput').addEventListener('keydown', function(e) {
+  if (e.key === '@') setTimeout(showCommentMention, 100);
+});
+async function showCommentMention() {
+  var input = $('commentInput');
+  var text = input.value.substring(0, input.selectionStart);
+  var match = text.match(/@([\w一-鿿]*)$/);
+  if (!match) return;
+  try {
+    var users = await apiCall('/api/users/search?q='+encodeURIComponent(match[1].toLowerCase()));
+    if (!users||users.length===0) return;
+    // Simple insert: insert first match on Tab or append to input
+    var u = users[0];
+    var before = text.replace(/@[\w一-鿿]*$/, '');
+    input.value = before + '@' + u + ' ' + input.value.substring(input.selectionStart);
+    input.focus();
+    var pos = before.length + u.length + 2;
+    input.selectionStart = input.selectionEnd = pos;
+  }catch(e){}
 }
 
 function getUsersFromPosts() {
@@ -3273,8 +3383,26 @@ document.addEventListener('keydown',function(e){
   }
 });
 
+// ==================== Pull to Refresh ====================
+var pullStartY = 0, pulling = false;
+document.addEventListener('touchstart', function(e) {
+  if (window.scrollY === 0) { pullStartY = e.touches[0].clientY; pulling = true; }
+}, {passive:true});
+document.addEventListener('touchmove', function(e) {
+  if (!pulling || window.scrollY > 0) return;
+  var dy = e.touches[0].clientY - pullStartY;
+  if (dy > 40) { $('pullIndicator').classList.add('show'); }
+}, {passive:true});
+document.addEventListener('touchend', function() {
+  if ($('pullIndicator').classList.contains('show')) {
+    loadPosts(currentForum, currentSort, currentRange).then(function() { renderPosts(); });
+  }
+  $('pullIndicator').classList.remove('show'); pulling = false;
+});
+
 // ==================== Init ====================
 async function initApp(){
+  showSkeleton();
   try {
     await loadPosts();
     updateAuthUI();
@@ -3287,7 +3415,6 @@ async function initApp(){
     startAutoRefresh();
   } catch(e) {
     console.error('[init]', e.message);
-    // Fallback: show empty state instead of white screen
     updateAuthUI();
     renderPosts();
   }
