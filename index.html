@@ -1365,8 +1365,12 @@ async function apiCall(endpoint, opts={}){
   var token=getToken();
   if(token) headers['Authorization']='Bearer '+token;
   var resp=await fetch(url,{method:opts.method||'GET',headers,body:opts.body?JSON.stringify(opts.body):undefined,signal:AbortSignal.timeout(opts.timeout||15000)});
+  if(!resp.ok){
+    var errText='请求失败';
+    try{ var errData=await resp.json(); errText=errData.error||errText; }catch(_){}
+    throw new Error(errText);
+  }
   var data=await resp.json();
-  if(!resp.ok) throw new Error(data.error||'请求失败');
   return data;
 }
 
@@ -3270,7 +3274,25 @@ document.addEventListener('keydown',function(e){
 });
 
 // ==================== Init ====================
-loadPosts().then(function(){ updateAuthUI(); renderPosts(); renderTicker(); startAutoRefresh(); loadLeaderboard(); loadHotTags(); loadAnnouncements(); loadSubscriptions(); });
+async function initApp(){
+  try {
+    await loadPosts();
+    updateAuthUI();
+    renderPosts();
+    renderTicker();
+    loadLeaderboard();
+    loadHotTags();
+    loadAnnouncements();
+    loadSubscriptions();
+    startAutoRefresh();
+  } catch(e) {
+    console.error('[init]', e.message);
+    // Fallback: show empty state instead of white screen
+    updateAuthUI();
+    renderPosts();
+  }
+}
+initApp();
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){})}
 </script>
 </body>
