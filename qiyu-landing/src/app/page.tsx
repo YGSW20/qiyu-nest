@@ -12,7 +12,6 @@ const features = [
 export default function Home() {
   return (
     <>
-      {/* ── Nav ── */}
       <nav className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-gray-200/50">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <a href="/" className="text-lg font-bold tracking-tight text-[#1D1D1F]">
@@ -20,11 +19,11 @@ export default function Home() {
           </a>
           <div className="flex items-center gap-4 text-sm">
             <a href="#features" className="text-[#6E6E73] hover:text-[#1D1D1F] transition-colors">功能</a>
+            <a href={APP_URL} className="bg-[#007AFF] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-[#0066D6] transition-colors">开始体验</a>
           </div>
         </div>
       </nav>
 
-      {/* ── Hero ── */}
       <section className="max-w-4xl mx-auto px-6 pt-20 pb-16 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-[#007AFF] text-sm font-medium mb-8">
           🤖 AI 赋能 · 完全免费
@@ -36,13 +35,12 @@ export default function Home() {
         <p className="text-lg text-[#6E6E73] max-w-2xl mx-auto mb-10 leading-relaxed">
           栖语 Nest 是一个免费的中文兴趣社区。技术交流、游戏攻略、AI 探索、生活日常——找到属于你的圈子。AI 写作助手帮你把想法变成好文章。
         </p>
-        <a href="#features" className="inline-block bg-[#007AFF] text-white px-8 py-3 rounded-full text-base font-semibold hover:bg-[#0066D6] transition-colors shadow-lg shadow-blue-500/25">
-          了解更多
+        <a href={APP_URL} className="inline-block bg-[#007AFF] text-white px-10 py-3.5 rounded-full text-lg font-semibold hover:bg-[#0066D6] transition-colors shadow-lg shadow-blue-500/25">
+          开始体验
         </a>
-        <p className="mt-5 text-xs text-[#AEAEB2]">AI 驱动 · 完全免费 · 中文兴趣社区</p>
+        <p className="mt-5 text-xs text-[#AEAEB2]">完全免费 · 浏览器打开即用 · 支持添加到手机桌面</p>
       </section>
 
-      {/* ── Features ── */}
       <section id="features" className="max-w-6xl mx-auto px-6 py-20">
         <div className="text-center mb-14">
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#1D1D1F] mb-4">一个纯粹的兴趣社区</h2>
@@ -59,7 +57,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Footer ── */}
       <footer className="border-t border-[#E5E5EA] bg-white">
         <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-sm text-[#6E6E73]">
@@ -68,6 +65,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-6 text-sm text-[#6E6E73]">
             <a href="#features" className="hover:text-[#1D1D1F] transition-colors">功能</a>
+            <a href={APP_URL} className="hover:text-[#1D1D1F] transition-colors">社区</a>
           </div>
         </div>
       </footer>
