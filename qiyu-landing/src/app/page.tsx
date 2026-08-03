@@ -20,7 +20,6 @@ export default function Home() {
           </a>
           <div className="flex items-center gap-4 text-sm">
             <a href="#features" className="text-[#6E6E73] hover:text-[#1D1D1F] transition-colors">功能</a>
-            <a href={APP_URL} className="bg-[#007AFF] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-[#0066D6] transition-colors">打开应用</a>
           </div>
         </div>
       </nav>
@@ -37,15 +36,10 @@ export default function Home() {
         <p className="text-lg text-[#6E6E73] max-w-2xl mx-auto mb-10 leading-relaxed">
           栖语 Nest 是一个免费的中文兴趣社区。技术交流、游戏攻略、AI 探索、生活日常——找到属于你的圈子。AI 写作助手帮你把想法变成好文章。
         </p>
-        <div className="flex items-center justify-center gap-4">
-          <a href={APP_URL} className="bg-[#007AFF] text-white px-8 py-3 rounded-full text-base font-semibold hover:bg-[#0066D6] transition-colors shadow-lg shadow-blue-500/25">
-            免费加入社区
-          </a>
-          <a href="#features" className="bg-white text-[#1D1D1F] px-8 py-3 rounded-full text-base font-medium border border-[#E5E5EA] hover:bg-gray-50 transition-colors">
-            了解更多
-          </a>
-        </div>
-        <p className="mt-5 text-xs text-[#AEAEB2]">完全免费，无需下载。浏览器打开即用，支持添加到手机桌面。</p>
+        <a href="#features" className="inline-block bg-[#007AFF] text-white px-8 py-3 rounded-full text-base font-semibold hover:bg-[#0066D6] transition-colors shadow-lg shadow-blue-500/25">
+          了解更多
+        </a>
+        <p className="mt-5 text-xs text-[#AEAEB2]">AI 驱动 · 完全免费 · 中文兴趣社区</p>
       </section>
 
       {/* ── Features ── */}
@@ -65,17 +59,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── CTA ── */}
-      <section className="max-w-4xl mx-auto px-6 py-20 text-center">
-        <div className="bg-[#007AFF] rounded-3xl px-10 py-16 text-white">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">完全免费，马上加入</h2>
-          <p className="text-white/80 text-base max-w-md mx-auto mb-8">没有任何付费墙。注册即用，AI 写作助手免费开放，和志同道合的人一起交流。</p>
-          <a href={APP_URL} className="inline-block bg-white text-[#007AFF] px-10 py-3.5 rounded-full text-base font-bold hover:bg-gray-100 transition-colors shadow-lg">
-            立即加入 🚀
-          </a>
-        </div>
-      </section>
-
       {/* ── Footer ── */}
       <footer className="border-t border-[#E5E5EA] bg-white">
         <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -84,9 +67,7 @@ export default function Home() {
             <span>© 2026 · 完全免费的兴趣社区</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-[#6E6E73]">
-            <a href={APP_URL} className="hover:text-[#1D1D1F] transition-colors">社区</a>
-            <a href={`${APP_URL}/admin`} className="hover:text-[#1D1D1F] transition-colors">管理</a>
-            <a href="mailto:hi@qiyu-nest.com" className="hover:text-[#1D1D1F] transition-colors">联系</a>
+            <a href="#features" className="hover:text-[#1D1D1F] transition-colors">功能</a>
           </div>
         </div>
       </footer>
